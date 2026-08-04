@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>bust check</title>
+<style>html,body{margin:0;background:#04050a;overflow:hidden}canvas{display:block}
+#lbl{position:fixed;top:10px;left:14px;font:600 15px ui-monospace,monospace;color:#9ff0e4;z-index:9}</style>
+</head>
+<body>
+<div id="lbl"></div>
+<script type="module">
+import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { MeshSurfaceSampler } from 'three/examples/jsm/math/MeshSurfaceSampler.js'
+
+// ?m=cand_A1  -> renders that GLB as the point cloud, from three angles at once.
+// The side/back views are the point of this: image_to_3d only ever saw the front.
+const name = new URLSearchParams(location.search).get('m') || 'cand_A1'
+document.getElementById('lbl').textContent = name + '   |   front · three-quarter · profile'
+
+const renderer = new THREE.WebGLRenderer({ antialias: true })
+renderer.setPixelRatio(1)
+renderer.setSize(innerWidth, innerHeight)
+document.body.appendChild(renderer.domElement)
+const scene = new THREE.Scene()
+scene.background = new THREE.Color('#04050a')
+const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 200)
+camera.position.set(0, 0, 13)
+camera.lookAt(0, 0, 0)
+
+const PER = 26000
+
+function sample(scn, count) {
+  const meshes = []
+  scn.traverse(o => { if (o.isMesh && o.geometry) meshes.push(o) })
+  const src = meshes.map(m => { const g = m.geometry.clone(); g.applyMatrix4(m.matrixWorld); return g })
+  const box = new THREE.Box3()
+  src.forEach(g => { g.computeBoundingBox(); box.union(g.boundingBox) })
+  const size = new THREE.Vector3(), centre = new THREE.Vector3()
+  box.getSize(size); box.getCenter(centre)
+  const axis = size.x > size.y && size.x > size.z ? 'x' : size.z > size.y ? 'z' : 'y'
+  const orient = new THREE.Matrix4()
+  if (axis === 'x') orient.makeRotationZ(Math.PI / 2)
+  else if (axis === 'z') orient.makeRotationX(-Math.PI / 2)
+  const cross = axis === 'x' ? Math.max(size.y, size.z)
+              : axis === 'z' ? Math.max(size.x, size.y)
+              :                Math.max(size.x, size.z)
+  const k = 1 / cross
+  const xform = new THREE.Matrix4()
+    .multiply(new THREE.Matrix4().makeScale(k, k, k))
+    .multiply(orient)
+    .multiply(new THREE.Matrix4().makeTranslation(-centre.x, -centre.y, -centre.z))
+  const areas = src.map(g => {
+    g.applyMatrix4(xform); g.computeBoundingBox()
+    const s = new THREE.Vector3(); g.boundingBox.getSize(s)
+    return s.x * s.y + s.y * s.z + s.z * s.x
+  })
+  const total = areas.reduce((a, b) => a + b, 0) || 1
+  const pos = new Float32Array(count * 3), col = new Float32Array(count * 3)
+  const stone = new THREE.Color('#8fa6bd'), mint = new THREE.Color('#9ff0e4'), rose = new THREE.Color('#ff9ad0')
+  const tmp = new THREE.Color(), p = new THREE.Vector3(), n = new THREE.Vector3()
+  let w = 0
+  src.forEach((g, gi) => {
+    const share = gi === src.length - 1 ? count - w : Math.floor(count * (areas[gi] / total))
+    if (share <= 0) return
+    const s = new MeshSurfaceSampler(new THREE.Mesh(g)).build()
+    for (let i = 0; i < share; i++) {
+      s.sample(p, n); const j = w + i
+      pos[j*3] = p.x; pos[j*3+1] = p.y; pos[j*3+2] = p.z
+      const facing = Math.max(0, n.z), rim = 1 - facing
+      tmp.copy(stone).lerp(mint, rim * 0.55).lerp(rose, facing * 0.28).multiplyScalar(0.5 + Math.random() * 0.8)
+      col[j*3] = tmp.r; col[j*3+1] = tmp.g; col[j*3+2] = tmp.b
+    }
+    w += share
+  })
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3))
+  return { geo: g, size, axis }
+}
+
+const mat = new THREE.PointsMaterial({
+  size: 0.016, vertexColors: true, transparent: true, opacity: 0.95,
+  depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
+})
+
+new GLTFLoader().load(`/models/${name}.glb`, gltf => {
+  const { geo, size, axis } = sample(gltf.scene, PER)
+  console.log('BUSTCHECK', name, 'raw size', size.x.toFixed(3), size.y.toFixed(3), size.z.toFixed(3), 'long axis', axis)
+  ;[[-4.2, 0], [0, Math.PI * 0.72], [4.2, Math.PI * 1.5]].forEach(([x, ry]) => {
+    const pts = new THREE.Points(geo, mat)
+    pts.position.set(x, 0, 0)
+    pts.rotation.y = ry
+    pts.scale.setScalar(3.4)
+    scene.add(pts)
+  })
+  renderer.render(scene, camera)
+  window.__ready = true
+})
+</script>
+</body>
+</html>

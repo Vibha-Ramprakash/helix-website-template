@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=DM+Mono:wght@300;400;500&display=swap');
+
+:root{
+  --ink:#04050a;
+  --paper:#eef0f6;
+  --hot:#ff4d9d;
+  --cool:#5ee9ff;
+  --mono:"DM Mono", ui-monospace, monospace;
+  --display:"Anton", Impact, sans-serif;
+}
+*{box-sizing:border-box}
+html,body,#root{margin:0;padding:0;height:100%}
+body{background:var(--ink);color:var(--paper);font-family:var(--mono);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::selection{background:var(--hot);color:#000}
+
+canvas.gl{position:fixed!important;inset:0;width:100vw!important;height:100vh!important;z-index:0}
+/* 900vh -> 1300vh: act three added 3.05 slots on top of the 6.85 card slots, and the runway grows
+   by the same ratio so the cards keep moving at exactly the rate Vibha approved. */
+.runway{position:relative;z-index:1;height:1300vh;pointer-events:none}
+
+.vig{position:fixed;inset:0;z-index:4;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%,transparent 42%,rgba(4,5,10,.92) 100%)}
+.grain{position:fixed;inset:-50%;width:200%;height:200%;z-index:5;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:gr 6s steps(8) infinite}
+@keyframes gr{0%,100%{transform:translate(0,0)}25%{transform:translate(-2%,1%)}50%{transform:translate(1%,-2%)}75%{transform:translate(2%,2%)}}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;
+  align-items:center;padding:1.5rem 4vw;font-size:.62rem;letter-spacing:.32em;text-transform:uppercase}
+.mark{font-family:var(--display);font-size:1.1rem;letter-spacing:.28em}
+.pill{display:flex;gap:1.2rem;align-items:center;border:1px solid rgba(238,240,246,.2);
+  border-radius:99px;padding:.55rem 1.3rem;backdrop-filter:blur(14px)}
+.pill a{color:inherit;text-decoration:none;opacity:.75;transition:.3s}
+.pill a:hover{opacity:1;color:var(--cool)}
+.pill i{width:24px;height:1px;background:rgba(238,240,246,.35);display:block}
+
+.hero{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;justify-content:center;
+  align-items:center;text-align:center;pointer-events:none;transition:opacity .7s ease}
+h1{font-family:var(--display);font-weight:400;margin:0;line-height:.88;
+  font-size:clamp(2.8rem,11vw,9.5rem);text-transform:uppercase;letter-spacing:.01em}
+h1 span{display:block}
+
+/* --- the opening: the sigil spins alone for a beat, then the type materialises out of it ---
+   Blur + letter-spacing collapsing inward reads as condensing out of the haze rather than a
+   plain fade. Lines are staggered so it resolves top-down. */
+@keyframes materialise{
+  from{opacity:0;filter:blur(26px);letter-spacing:.42em;transform:translateY(.28em)}
+  to  {opacity:1;filter:blur(0);letter-spacing:.01em;transform:none}
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(1.1em)}to{opacity:1;transform:none}}
+.hero h1 span{opacity:0;animation:materialise 1.5s cubic-bezier(.16,.9,.24,1) forwards}
+.hero h1 span:nth-child(1){animation-delay:1.15s}
+.hero h1 span:nth-child(2){animation-delay:1.34s}
+.hero h1 span:nth-child(3){animation-delay:1.53s}
+.hero .kicker{opacity:0;animation:fadeUp .9s ease forwards;animation-delay:.85s}
+.hero .sub{opacity:0;animation:fadeUp .9s ease forwards;animation-delay:2.1s}
+
+/* --- the closing title block, in the garden only -------------------------
+   Same centred kicker / title / sub structure as the hero, so the scroll opens and closes on
+   the same shape. Sits a little below centre to clear the main bust's face. */
+/* Arrives rather than appears. Each line rises and resolves out of blur on its own beat as you
+   scroll into the garden, so the copy is part of the sequence instead of a card that switches on. */
+.ending{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;text-align:center;
+  pointer-events:none;transition:opacity 1.4s ease}
+.ending > *{opacity:0;transform:translateY(1.4rem);filter:blur(14px);
+  transition:opacity 1s cubic-bezier(.16,.9,.24,1),transform 1.1s cubic-bezier(.16,.9,.24,1),
+             filter 1s cubic-bezier(.16,.9,.24,1)}
+.ending[data-in="1"] > *{opacity:1;transform:none;filter:blur(0)}
+.ending[data-in="1"] .kicker{transition-delay:.15s}
+.ending[data-in="1"] .veil,.ending[data-in="1"] h2{transition-delay:.42s}
+.ending[data-in="1"] .esub{transition-delay:.78s}
+.ending[data-in="1"] .cta{transition-delay:1.05s}
+.ending h2{font-family:var(--display);font-weight:400;margin:0;line-height:.94;
+  font-size:clamp(2rem,6vw,5rem);text-transform:uppercase;letter-spacing:.05em;
+  /* the garden behind is busy and bright in places — this keeps the type readable over all of it */
+  text-shadow:0 2px 40px rgba(2,8,10,.85),0 1px 3px rgba(2,8,10,.6)}
+.ending h2 span{display:block}
+.esub{font-size:.72rem;line-height:2;letter-spacing:.12em;opacity:.72;margin:1.5rem 0 0;
+  max-width:30rem;text-shadow:0 1px 20px rgba(2,8,10,.9)}
+/* the garden is far brighter than the black hero, so the eyebrow needs lifting to survive it */
+.ending .kicker{color:#b9f4ff;opacity:.95;text-shadow:0 1px 22px rgba(2,8,10,.95)}
+
+.cta{margin-top:2.4rem;pointer-events:auto;display:inline-flex;align-items:center;gap:.85rem;
+  font-family:var(--mono);font-size:.66rem;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--paper);text-decoration:none;padding:1.05rem 2.3rem;border-radius:99px;
+  border:1px solid rgba(238,240,246,.32);background:rgba(6,14,16,.42);backdrop-filter:blur(14px);
+  transition:.35s ease}
+.cta i{width:20px;height:1px;background:currentColor;display:block;transition:.35s ease}
+.cta:hover{background:rgba(238,240,246,.94);color:#04121a;border-color:transparent}
+.cta:hover i{width:34px}
+
+.kicker{font-size:.6rem;letter-spacing:.5em;text-transform:uppercase;color:var(--cool);margin:0 0 1.3rem}
+.sub{font-size:.68rem;letter-spacing:.35em;text-transform:uppercase;opacity:.55;margin:1.6rem 0 0}
+
+.cap{position:fixed;right:4vw;bottom:11vh;z-index:20;text-align:right;max-width:23rem;
+  transition:opacity .6s ease;pointer-events:none}
+.cap i{font-style:normal;color:var(--hot);font-size:.56rem;letter-spacing:.3em;display:block;margin-bottom:.5rem}
+.cap b{font-family:var(--display);font-size:clamp(1.5rem,3.2vw,2.6rem);font-weight:400;
+  display:block;letter-spacing:.04em;text-transform:uppercase;line-height:1}
+.cap p{font-size:.64rem;line-height:1.95;opacity:.55;letter-spacing:.05em;margin:.75rem 0 0}
+
+@media (max-width:760px){
+  .cap{left:4vw;right:4vw;max-width:none;text-align:left;bottom:8vh}
+}

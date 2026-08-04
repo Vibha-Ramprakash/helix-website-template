@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VIBHA — AI Systems</title>
+    <style>
+      /* R3F puts className on a WRAPPER div, not on the canvas itself.
+         These overrides win over index.css because they load after it. */
+      .gl { position: fixed !important; inset: 0 !important;
+            width: 100vw !important; height: 100vh !important; z-index: 0 !important; }
+      .gl canvas { display: block !important; width: 100% !important; height: 100% !important; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/boot.jsx"></script>
+  </body>
+</html>
