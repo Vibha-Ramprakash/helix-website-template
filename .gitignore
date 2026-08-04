@@ -1,0 +1,12 @@
+node_modules
+dist
+.DS_Store
+*.log
+.vite
+
+# Generated art is NOT committed — see ASSETS.md for every prompt.
+public/tex/*.png
+public/video/*.mp4
+public/models/*.glb
+public/cards/*.png
+public/env/*.png
